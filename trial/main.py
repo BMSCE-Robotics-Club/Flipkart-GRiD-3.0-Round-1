@@ -40,8 +40,8 @@ ARUCO_DICT = {
 
 def moveForward():
     # bot number, [forward = 1, rotate right = 2, rotate left = 3, stop and deliver package = 4]
-    global bot
-    tcpConnection(bot * 10 + 1, flag_send=1)
+
+    tcpConnection(bot, flag_send=1)
     print("Forward")
 
 
@@ -130,7 +130,7 @@ def PlotReversePath(image, startpoint, turnpoint, endpoint, direction):
 
 
 
-def detect_video(frame, dict_type):
+def detect_video(frame, dict_type, robNo):
     if ARUCO_DICT.get(dict_type, None) is None:
         print("[INFO] ArUCo tag of '{}' is not supported".format(dict_type))
         sys.exit(0)
@@ -142,35 +142,37 @@ def detect_video(frame, dict_type):
     (corners, ids, rejected) = cv2.aruco.detectMarkers(frame,
                                                        arucoDict, parameters=arucoParams)
     topLeft = 0 ,0
+    arucoRobNo = [10, 20, 30, 40]
     if len(corners) > 0:
 
         ids = ids.flatten()
 
         for (markerCorner, markerID) in zip(corners, ids):
-            # extract the marker corners
-            corners = markerCorner.reshape((4, 2))
-            (topLeft, topRight, bottomRight, bottomLeft) = corners
-            # convert each of the (x, y)-coordinate pairs to integers
-            topRight = (int(topRight[0]), int(topRight[1]))
-            bottomRight = (int(bottomRight[0]), int(bottomRight[1]))
-            bottomLeft = (int(bottomLeft[0]), int(bottomLeft[1]))
-            topLeft = (int(topLeft[0]), int(topLeft[1]))
+            if markerID == arucoRobNo[robNo]:
+                # extract the marker corners
+                corners = markerCorner.reshape((4, 2))
+                (topLeft, topRight, bottomRight, bottomLeft) = corners
+                # convert each of the (x, y)-coordinate pairs to integers
+                topRight = (int(topRight[0]), int(topRight[1]))
+                bottomRight = (int(bottomRight[0]), int(bottomRight[1]))
+                bottomLeft = (int(bottomLeft[0]), int(bottomLeft[1]))
+                topLeft = (int(topLeft[0]), int(topLeft[1]))
 
-            # draw the bounding box of the ArUCo detection
-            cv2.line(frame, topLeft, topRight, (0, 255, 0), 2)
-            cv2.line(frame, topRight, bottomRight, (0, 255, 0), 2)
-            cv2.line(frame, bottomRight, bottomLeft, (0, 255, 0), 2)
-            cv2.line(frame, bottomLeft, topLeft, (0, 255, 0), 2)
-            # compute and draw the center (x, y)-coordinates of the
-            # ArUco marker
-            cX = int((topLeft[0] + bottomRight[0]) / 2.0)
-            cY = int((topLeft[1] + bottomRight[1]) / 2.0)
-            cv2.circle(frame, (cX, cY), 4, (0, 0, 255), -1)
-            # draw the ArUco marker ID on the frame
-            cv2.putText(frame, str(markerID),
-                        (topLeft[0], topLeft[1] - 15),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.5, (0, 255, 0), 2)
+                # draw the bounding box of the ArUCo detection
+                cv2.line(frame, topLeft, topRight, (0, 255, 0), 2)
+                cv2.line(frame, topRight, bottomRight, (0, 255, 0), 2)
+                cv2.line(frame, bottomRight, bottomLeft, (0, 255, 0), 2)
+                cv2.line(frame, bottomLeft, topLeft, (0, 255, 0), 2)
+                # compute and draw the center (x, y)-coordinates of the
+                # ArUco marker
+                cX = int((topLeft[0] + bottomRight[0]) / 2.0)
+                cY = int((topLeft[1] + bottomRight[1]) / 2.0)
+                cv2.circle(frame, (cX, cY), 4, (0, 0, 255), -1)
+                # draw the ArUco marker ID on the frame
+                cv2.putText(frame, str(markerID),
+                            (topLeft[0], topLeft[1] - 15),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.5, (0, 255, 0), 2)
 
     return frame, topLeft
 
@@ -182,7 +184,7 @@ def tcpConnection(data_to_send=0, flag_send=0):
         client_socket.send(command_data.encode('utf-8'))
         data = client_socket.recv(1024)
     else:
-        serverName = '127.0.0.1'
+        serverName = '192.168.249.92'
         serverPort = 12345
         client_socket.connect((serverName, serverPort))
 
@@ -198,12 +200,13 @@ def main():
     tcpConnection(100, 1)
     break_flag = 0
 
+
     nextBot = False
-    i, robNo = 0, 3
+    i, robNo = 0, 4
     while i != robNo:
         while (1):
             _, frame = video.read()
-            vid, topLeft = detect_video(frame, "DICT_5X5_100")
+            vid, topLeft = detect_video(frame, "DICT_5X5_100", i)
             # print(topLeft)
 
             global bot
