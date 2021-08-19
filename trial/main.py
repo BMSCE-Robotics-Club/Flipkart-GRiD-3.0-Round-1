@@ -15,7 +15,7 @@ tp1, tp2, tp3, tp4 = (480, 480), (540, 540), (600, 540), (660, 480)
 # Initiazling final points for the bots to reach
 fp1, fp2, fp3, fp4 = (0, 480), (0, 540), (1140, 540), (1140, 480)
 
-bot = 1
+# bot = 1
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 ARUCO_DICT = {
@@ -38,27 +38,24 @@ ARUCO_DICT = {
 }
 
 
-def moveForward():
+def moveForward(bot):
     # bot number, [forward = 1, rotate right = 2, rotate left = 3, stop and deliver package = 4]
 
-    tcpConnection(bot, flag_send=1)
+    tcpConnection(bot* 10 + 1, flag_send=1)
     print("Forward")
 
 
-def rotateRight(x):
-    global bot
+def rotateRight(bot):
     tcpConnection(bot * 10 + 2, flag_send=1)
     print("turn right")
 
 
-def rotateLeft(x):
-    global bot
+def rotateLeft(bot):
     tcpConnection(bot * 10 + 3, flag_send=1)
     print('turn left')
 
 
-def stopNDeliverPackage():
-    global bot
+def stopNDeliverPackage(bot):
     tcpConnection(bot * 10 + 4, flag_send=1)
     print('deliver package')
 
@@ -66,7 +63,7 @@ def stopNDeliverPackage():
 turnedRight = False
 
 
-def PlotForwardPath(image, startpoint, turnpoint, endpoint, direction):
+def PlotForwardPath(image, startpoint, turnpoint, endpoint, direction, bot):
     # the point moves vertically down first and then chooses left or right
     x1, y1 = startpoint
     x2, y2 = endpoint
@@ -74,25 +71,25 @@ def PlotForwardPath(image, startpoint, turnpoint, endpoint, direction):
     global turnedRight
     if (x1 in range(x2 - 10, x2 + 10) and y1 in range(y2 - 10, y2 + 10)):
         print("Destination Reached!")
-        stopNDeliverPackage()
+        stopNDeliverPackage(bot)
     if (y1 < a2) or turnedRight:
         # vertically moving pixelwise down
-        moveForward()
+        moveForward(bot)
         return
     if (y1 >= a2) and direction:
         # vertically moving sidewise right
         turnedRight = True
-        rotateRight()
-        moveForward()
+        rotateRight(bot)
+        moveForward(bot)
         return
     if (y1 >= a2) and not direction:
         # vertically moving sidewise left
-        rotateLeft()
-        moveForward()
+        rotateLeft(bot)
+        moveForward(bot)
         return
 
 
-def PlotReversePath(image, startpoint, turnpoint, endpoint, direction):
+def PlotReversePath(image, startpoint, turnpoint, endpoint, direction, bot):
     # the point moves left or right first and then finally moves upwards
     x1, y1 = endpoint  # Actually this is the starting point
     x2, y2 = startpoint  # And this is the end point... i have interchanged because, i wanted the syntax to remain same
@@ -115,17 +112,17 @@ def PlotReversePath(image, startpoint, turnpoint, endpoint, direction):
     #     return False
     if (x1 in range(a1 - 10, a1 + 10)):
         if (direction == 1):
-            rotateLeft()
-            moveForward()
+            rotateLeft(bot)
+            moveForward(bot)
             return False
         else:
-            rotateRight()
-            moveForward()
+            rotateRight(bot)
+            moveForward(bot)
             return False
 
     if (y1 <= a2):
         # move top
-        moveForward()
+        moveForward(bot)
         return False
 
 
@@ -148,31 +145,31 @@ def detect_video(frame, dict_type, robNo):
         ids = ids.flatten()
 
         for (markerCorner, markerID) in zip(corners, ids):
-            if markerID == arucoRobNo[robNo]:
+            # if markerID == arucoRobNo[robNo]:
                 # extract the marker corners
-                corners = markerCorner.reshape((4, 2))
-                (topLeft, topRight, bottomRight, bottomLeft) = corners
-                # convert each of the (x, y)-coordinate pairs to integers
-                topRight = (int(topRight[0]), int(topRight[1]))
-                bottomRight = (int(bottomRight[0]), int(bottomRight[1]))
-                bottomLeft = (int(bottomLeft[0]), int(bottomLeft[1]))
-                topLeft = (int(topLeft[0]), int(topLeft[1]))
+            corners = markerCorner.reshape((4, 2))
+            (topLeft, topRight, bottomRight, bottomLeft) = corners
+            # convert each of the (x, y)-coordinate pairs to integers
+            topRight = (int(topRight[0]), int(topRight[1]))
+            bottomRight = (int(bottomRight[0]), int(bottomRight[1]))
+            bottomLeft = (int(bottomLeft[0]), int(bottomLeft[1]))
+            topLeft = (int(topLeft[0]), int(topLeft[1]))
 
-                # draw the bounding box of the ArUCo detection
-                cv2.line(frame, topLeft, topRight, (0, 255, 0), 2)
-                cv2.line(frame, topRight, bottomRight, (0, 255, 0), 2)
-                cv2.line(frame, bottomRight, bottomLeft, (0, 255, 0), 2)
-                cv2.line(frame, bottomLeft, topLeft, (0, 255, 0), 2)
-                # compute and draw the center (x, y)-coordinates of the
-                # ArUco marker
-                cX = int((topLeft[0] + bottomRight[0]) / 2.0)
-                cY = int((topLeft[1] + bottomRight[1]) / 2.0)
-                cv2.circle(frame, (cX, cY), 4, (0, 0, 255), -1)
-                # draw the ArUco marker ID on the frame
-                cv2.putText(frame, str(markerID),
-                            (topLeft[0], topLeft[1] - 15),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.5, (0, 255, 0), 2)
+            # draw the bounding box of the ArUCo detection
+            cv2.line(frame, topLeft, topRight, (0, 255, 0), 2)
+            cv2.line(frame, topRight, bottomRight, (0, 255, 0), 2)
+            cv2.line(frame, bottomRight, bottomLeft, (0, 255, 0), 2)
+            cv2.line(frame, bottomLeft, topLeft, (0, 255, 0), 2)
+            # compute and draw the center (x, y)-coordinates of the
+            # ArUco marker
+            cX = int((topLeft[0] + bottomRight[0]) / 2.0)
+            cY = int((topLeft[1] + bottomRight[1]) / 2.0)
+            cv2.circle(frame, (cX, cY), 4, (0, 0, 255), -1)
+            # draw the ArUco marker ID on the frame
+            cv2.putText(frame, str(markerID),
+                        (topLeft[0], topLeft[1] - 15),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5, (0, 255, 0), 2)
 
     return frame, topLeft
 
@@ -200,20 +197,19 @@ def main():
     tcpConnection(100, 1)
     break_flag = 0
 
-
+    bot = 1
     nextBot = False
     i, robNo = 0, 4
     while i != robNo:
         while (1):
             _, frame = video.read()
-            vid, topLeft = detect_video(frame, "DICT_5X5_100", i)
+            vid, topLeft = detect_video(frame, "DICT_4X4_250", i)
             # print(topLeft)
 
-            global bot
-            bot = i
+            bot = i+1
             if topLeft != (0, 0):
-                PlotForwardPath(vid,topLeft, TurningPoints[i], FinalPoints[i],Directions[i])
-                nextBot = PlotReversePath(vid, topLeft, TurningPoints[i],FinalPoints[i],Directions[i])
+                PlotForwardPath(vid,topLeft, TurningPoints[i], FinalPoints[i],Directions[i], bot)
+                nextBot = PlotReversePath(vid, topLeft, TurningPoints[i],FinalPoints[i],Directions[i], bot)
 
             if nextBot == True:
                 i += 1
