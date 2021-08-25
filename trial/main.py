@@ -7,8 +7,21 @@ from imutils.video import VideoStream
 import time
 import socket
 import numpy as np
-import encodings
+import requests
 
+import encodings
+serverName = '192.168.144.173'
+serverPort = 12345
+#create
+server_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+
+#bind
+server_socket.bind((serverName, serverPort ))
+
+#listen
+server_socket.listen(5)
+
+client_socket, addr = server_socket.accept()
 # sp1, sp2, sp3, sp4 = (480, 0), (540, 00), (600, 0), (660, 0)
 # Initializing turning points coordinates for this configuration
 tp1, tp2, tp3, tp4 = (480, 480), (540, 540), (600, 540), (660, 480)
@@ -16,7 +29,7 @@ tp1, tp2, tp3, tp4 = (480, 480), (540, 540), (600, 540), (660, 480)
 fp1, fp2, fp3, fp4 = (0, 480), (0, 540), (1140, 540), (1140, 480)
 
 # bot = 1
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 ARUCO_DICT = {
     "DICT_4X4_50": cv2.aruco.DICT_4X4_50,
@@ -41,22 +54,22 @@ ARUCO_DICT = {
 def moveForward(bot):
     # bot number, [forward = 1, rotate right = 2, rotate left = 3, stop and deliver package = 4]
 
-    tcpConnection(bot* 10 + 1, flag_send=1)
+    # tcpConnection(bot* 10 + 1, flag_send=1)
     print("Forward")
 
 
 def rotateRight(bot):
-    tcpConnection(bot * 10 + 2, flag_send=1)
+    # tcpConnection(bot * 10 + 2, flag_send=1)
     print("turn right")
 
 
 def rotateLeft(bot):
-    tcpConnection(bot * 10 + 3, flag_send=1)
+    # tcpConnection(bot * 10 + 3, flag_send=1)
     print('turn left')
 
 
 def stopNDeliverPackage(bot):
-    tcpConnection(bot * 10 + 4, flag_send=1)
+    #tcpConnection(bot * 10 + 4, flag_send=1)
     print('deliver package')
 
 
@@ -176,34 +189,43 @@ def detect_video(frame, dict_type, robNo):
 
 def tcpConnection(data_to_send=0, flag_send=0):
     if flag_send:
+        
 
         command_data = str(data_to_send)
         client_socket.send(command_data.encode('utf-8'))
-        data = client_socket.recv(1024)
-    else:
-        serverName = '192.168.249.92'
-        serverPort = 12345
-        client_socket.connect((serverName, serverPort))
+        
+        # data = client_socket.recv(1024)
+    # else:
+        # serverName = '192.168.43.52'
+        # serverPort = 12345
+        # client_socket.connect((serverName, serverPort))
+        
 
 
 def main():
     tcpConnection()
-    video = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    
+    #video = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     # InitialPoints = [sp1, sp2, sp3, sp4]
     TurningPoints = [tp1, tp2, tp3, tp4]
     FinalPoints = [fp1, fp2, fp3, fp4]
     Directions = [1, 1, 0, 0]  # 1 significies left and 0 significies right
 
-    tcpConnection(100, 1)
+    tcpConnection('f', 1)
     break_flag = 0
 
     bot = 1
     nextBot = False
     i, robNo = 0, 4
+    url = "http://192.168.144.97:8080/shot.jpg"
     while i != robNo:
         while (1):
-            _, frame = video.read()
-            vid, topLeft = detect_video(frame, "DICT_4X4_250", i)
+            #_, frame = video.read()
+            img_resp = requests.get(url)
+            img_arr = np.array(bytearray(img_resp.content), dtype=np.uint8)
+            frame = cv2.imdecode(img_arr, -1)
+            frame = imutils.resize(frame, width=1000, height=1800)
+            vid, topLeft = detect_video(frame, "DICT_5X5_50", i)
             # print(topLeft)
 
             bot = i+1
@@ -229,3 +251,4 @@ def main():
 
 
 main()
+client_socket.close()
