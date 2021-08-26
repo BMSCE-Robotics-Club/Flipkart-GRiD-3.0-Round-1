@@ -72,23 +72,23 @@ ARUCO_DICT = {
 def moveForward(bot):
     # bot number, [forward = 1, rotate right = 2, rotate left = 3, stop and deliver package = 4]
     value = 'F'+str(bot)
-    tcpConnection(value, flag_send=1)
+    # tcpConnection(value, flag_send=1)
     # tcpConnection(bot* 10 + 1, flag_send=1)
-    print("Forward")
+    print(value)
 
 
 def rotateRight(bot):
     value = 'R'+str(bot)
-    tcpConnection(value, flag_send=1)
+    # tcpConnection(value, flag_send=1)
     # tcpConnection(bot * 10 + 2, flag_send=1)
-    print("turn right")
+    print(value)
 
 
 def rotateLeft(bot):
     value = 'L'+str(bot)
-    tcpConnection(value, flag_send=1)
+    # tcpConnection(value, flag_send=1)
     # tcpConnection(bot * 10 + 3, flag_send=1)
-    print('turn left')
+    print(value)
 
 
 def stopNDeliverPackage(bot):
