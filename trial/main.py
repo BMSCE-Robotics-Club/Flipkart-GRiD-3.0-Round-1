@@ -10,23 +10,41 @@ import numpy as np
 import requests
 
 import encodings
-serverName = '192.168.144.173'
-serverPort = 12345
-#create
-server_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+# serverName = '192.168.144.173'
+# serverPort = 12345
+# #create
+# server_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
-#bind
-server_socket.bind((serverName, serverPort ))
+# #bind
+# server_socket.bind((serverName, serverPort ))
 
-#listen
-server_socket.listen(5)
+# #listen
+# server_socket.listen(5)
 
-client_socket, addr = server_socket.accept()
+# client_socket, addr = server_socket.accept()
 # sp1, sp2, sp3, sp4 = (480, 0), (540, 00), (600, 0), (660, 0)
 # Initializing turning points coordinates for this configuration
-tp1, tp2, tp3, tp4 = (480, 480), (540, 540), (600, 540), (660, 480)
+
+# (569, 53) s3
+
+# (83, 516) d2
+# (870,410) d4
+# (864, 453) d3
+# (591, 426) turning point for d4
+
+
+# (535, 424) turning point for b3
+
+# (477, 474) turning point for b2
+
+# (429, 429) turning point for b1
+
+
+tp1, tp2, tp3, tp4 = (480, 480), (540, 540), (535, 424), (591, 426)
 # Initiazling final points for the bots to reach
-fp1, fp2, fp3, fp4 = (0, 480), (0, 540), (1140, 540), (1140, 480)
+fp1, fp2, fp3, fp4 = (0, 480), (0, 540), (864, 453), (870, 410)
+
+ip1, ip2, ip3, ip4 = (), (), (569, 53), (618, 54)
 
 # bot = 1
 #client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -53,22 +71,29 @@ ARUCO_DICT = {
 
 def moveForward(bot):
     # bot number, [forward = 1, rotate right = 2, rotate left = 3, stop and deliver package = 4]
-
+    value = 'F'+str(bot)
+    tcpConnection(value, flag_send=1)
     # tcpConnection(bot* 10 + 1, flag_send=1)
     print("Forward")
 
 
 def rotateRight(bot):
+    value = 'R'+str(bot)
+    tcpConnection(value, flag_send=1)
     # tcpConnection(bot * 10 + 2, flag_send=1)
     print("turn right")
 
 
 def rotateLeft(bot):
+    value = 'L'+str(bot)
+    tcpConnection(value, flag_send=1)
     # tcpConnection(bot * 10 + 3, flag_send=1)
     print('turn left')
 
 
 def stopNDeliverPackage(bot):
+    value = 'J'+str(bot)
+    tcpConnection(value, flag_send=1)
     #tcpConnection(bot * 10 + 4, flag_send=1)
     print('deliver package')
 
@@ -162,11 +187,13 @@ def detect_video(frame, dict_type, robNo):
                 # extract the marker corners
             corners = markerCorner.reshape((4, 2))
             (topLeft, topRight, bottomRight, bottomLeft) = corners
+            
             # convert each of the (x, y)-coordinate pairs to integers
             topRight = (int(topRight[0]), int(topRight[1]))
             bottomRight = (int(bottomRight[0]), int(bottomRight[1]))
             bottomLeft = (int(bottomLeft[0]), int(bottomLeft[1]))
             topLeft = (int(topLeft[0]), int(topLeft[1]))
+            print("Bottom right = ", bottomRight, "Marker: ", markerID)
 
             # draw the bounding box of the ArUCo detection
             cv2.line(frame, topLeft, topRight, (0, 255, 0), 2)
@@ -178,6 +205,7 @@ def detect_video(frame, dict_type, robNo):
             cX = int((topLeft[0] + bottomRight[0]) / 2.0)
             cY = int((topLeft[1] + bottomRight[1]) / 2.0)
             cv2.circle(frame, (cX, cY), 4, (0, 0, 255), -1)
+            cv2.circle(frame, (bottomRight[0], bottomRight[1]), 4, (0, 255, 255), -1)
             # draw the ArUco marker ID on the frame
             cv2.putText(frame, str(markerID),
                         (topLeft[0], topLeft[1] - 15),
@@ -203,52 +231,53 @@ def tcpConnection(data_to_send=0, flag_send=0):
 
 
 def main():
-    tcpConnection()
+    # tcpConnection()
     
-    #video = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    video = cv2.VideoCapture('http://192.168.144.78:4747/mjpegfeed')
     # InitialPoints = [sp1, sp2, sp3, sp4]
     TurningPoints = [tp1, tp2, tp3, tp4]
     FinalPoints = [fp1, fp2, fp3, fp4]
     Directions = [1, 1, 0, 0]  # 1 significies left and 0 significies right
 
-    tcpConnection('f', 1)
+    # tcpConnection('f', 1)
     break_flag = 0
 
     bot = 1
     nextBot = False
-    i, robNo = 0, 4
-    url = "http://192.168.144.97:8080/shot.jpg"
+    i, robNo = 3, 4
+    # url = "http://192.168.144.97:8080/shot.jpg"
     while i != robNo:
         while (1):
-            #_, frame = video.read()
-            img_resp = requests.get(url)
-            img_arr = np.array(bytearray(img_resp.content), dtype=np.uint8)
-            frame = cv2.imdecode(img_arr, -1)
-            frame = imutils.resize(frame, width=1000, height=1800)
-            vid, topLeft = detect_video(frame, "DICT_5X5_50", i)
-            # print(topLeft)
+            _, frame = video.read()
+            if _:
+            # img_resp = requests.get(url)
+            # img_arr = np.array(bytearray(img_resp.content), dtype=np.uint8)
+            # frame = cv2.imdecode(img_arr, -1)
+                frame = imutils.resize(frame, width=1000, height=1800)
+                vid, topLeft = detect_video(frame, "DICT_5X5_50", i)
+                # print(topLeft)
 
-            bot = i+1
-            if topLeft != (0, 0):
-                PlotForwardPath(vid,topLeft, TurningPoints[i], FinalPoints[i],Directions[i], bot)
-                nextBot = PlotReversePath(vid, topLeft, TurningPoints[i],FinalPoints[i],Directions[i], bot)
+                bot = i+1
+                if topLeft != (0, 0):
+                    PlotForwardPath(vid,topLeft, TurningPoints[i], FinalPoints[i],Directions[i], bot)
+                    nextBot = PlotReversePath(vid, topLeft, TurningPoints[i],FinalPoints[i],Directions[i], bot)
 
-            if nextBot == True:
-                i += 1
+                if nextBot == True:
+                    i += 1
+                    break
+
+                cv2.imshow("name", vid)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                # global client_socket
+                # client_socket.close()
+                    break_flag = 1
+                    break
+
+            if break_flag == 1:
                 break
-
-            cv2.imshow("name", vid)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                global client_socket
-                client_socket.close()
-                break_flag = 1
-                break
-
-        if break_flag == 1:
-            break
     video.release()
     cv2.destroyAllWindows()
 
 
 main()
-client_socket.close()
+# client_socket.close()
